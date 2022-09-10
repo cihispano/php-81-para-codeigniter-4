@@ -1,0 +1,96 @@
+version: '3'
+
+services:
+    ###> Servidor NGINX ###
+    appstarter-fe:
+        build:
+            context: ./docker/Front
+            dockerfile: Dockerfile
+            args:
+                UID: $U_ID
+        restart: "unless-stopped"
+        container_name: appstarter-fe
+        hostname: appstarter-fe
+        volumes:
+            - ./public:/app/public
+            - ./docker/Front/conf.d:/etc/nginx/conf.d:ro
+        ports:
+            - '80:80'
+            - '443:443'
+        networks:
+            - appstarter-network
+    ###< Servidor NGINX ###
+
+    ###> Servidos PHP ###
+    appstarter-be:
+        build:
+            context: ./docker/Back
+            dockerfile: Dockerfile
+            args:
+                UID: $U_ID
+        restart: "unless-stopped"
+        container_name: appstarter-be
+        hostname: appstarter-be
+        volumes:
+            - .:/app
+            # - ~/.ssh:/home/usuario/.ssh:ro
+            # - ~/.gitconfig:/home/usuario/.gitconfig:ro
+        ###> Configuración para XDEBUG (XDEBUG_CLIENT_HOST)###
+        # Utiliza la dirección ip de tu máquina
+        # Windows (with WSL2) y Mac: hostdocker.internal
+        # Linux: ejecuta en una terminal "ip a | egrep 'docker0$' | sed 's/^ *//g' | cut -d' ' -f 2 | cut -d '/' -f 1"
+        environment:
+            XDEBUG_CLIENT_HOST: 172.17.0.1
+            XDEBUG_CLIENT_PORT: 9003
+            PHP_IDE_CONFIG: serverName=appstarter-be
+        ports:
+            - '1000:8000'
+        ###< Configuración para XDEBUG ###
+        networks:
+            - appstarter-network
+    ###< Servidos PHP ###
+
+  ###> Servidor MariaDB ###
+    appstarter-mysql:
+        restart: "unless-stopped"
+        container_name: appstarter-mysql
+        hostname: dbmysql
+        image: mariadb:10.9.2
+        ports:
+            - '3306:3306'
+        environment:
+            MYSQL_USER: ${DB_USER:-appstarter_user}
+            MYSQL_PASSWORD: ${DB_PASSWORD:-appstarter_password}
+            MYSQL_DATABASE: ${DB_NAME:-appstarter_db}
+            MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-appstarter_password}
+        volumes:
+            - appstarter-mysql-data:/var/lib/mysql
+            - ./docker/MariaDB/entrypoint:/docker-entrypoint-initdb.d:ro
+        networks:
+            - appstarter-network
+  ###< Servidor MariaDB ###
+
+    ###> Servidor PostgreSQL ###
+    appstarter-postgresql:
+        restart: "unless-stopped"
+        container_name: appstarter-postgresql
+        hostname: dbpostgres
+        image: postgres:14.5-alpine
+        ports:
+            - '5432:5432'
+        environment:
+            POSTGRES_USER: ${DB_USER:-appstarter_user}
+            POSTGRES_PASSWORD: ${DB_PASSWORD:-appstarter_password}
+            POSTGRES_DB: ${DB_NAME:-appstarter_db}
+        volumes:
+            - appstarter-postgresql-data:/var/lib/postgresql/data
+        networks:
+            - appstarter-network
+    ###< Servidor PostgreSQL ###
+
+networks:
+    appstarter-network:
+
+volumes:
+  appstarter-mysql-data:
+  appstarter-postgresql-data:
