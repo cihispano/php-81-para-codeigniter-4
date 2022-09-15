@@ -13,16 +13,16 @@ help: ## Muestra la ayuda
 # Gestión de contenedores
 
 build: ## Reconstruye todos los contenedores
-	@U_ID=${UID} docker-compose --env-file docker/.env build
+	@U_ID=${UID} docker-compose build
 
 start: ## Inicia los contenedores
-	@U_ID=${UID} docker-compose --env-file docker/.env up -d
+	@U_ID=${UID} docker-compose up -d
 
 stop: ## Para los contenedores
-	@U_ID=${UID} docker-compose --env-file docker/.env stop
+	@U_ID=${UID} docker-compose stop
 
 down: ## Apaga los contenedores
-	@U_ID=${UID} docker-compose --env-file docker/.env down
+	@U_ID=${UID} docker-compose down
 
 restart: ## Reinicia los contenedores
 	@$(MAKE) stop && $(MAKE) start
